@@ -5,7 +5,6 @@
 
 # Go specific files
 # Compiled Object files, Static and Dynamic libs (Shared Objects)
-*.go
 *.a
 *.o
 *.so

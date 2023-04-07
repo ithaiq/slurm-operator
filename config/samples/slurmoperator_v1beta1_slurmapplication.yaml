@@ -3,5 +3,51 @@ kind: SlurmApplication
 metadata:
   name: slurmapplication-sample
 spec:
-  # Add fields here
-  foo: bar
+  jupyter:
+    image: "my-jupyter-image"
+    instance: 2
+    resources:
+      limits:
+        cpu: "1"
+        memory: "1Gi"
+      requests:
+        cpu: "500m"
+        memory: "500Mi"
+    labels:
+      matchLabels:
+        app: my-app
+    nodeSelector:
+      matchLabels:
+        worker: my-worker
+  master:
+    image: "my-master-image"
+    instance: 1
+    resources:
+      limits:
+        cpu: "2"
+        memory: "2Gi"
+      requests:
+        cpu: "1"
+        memory: "1Gi"
+    labels:
+      matchLabels:
+        app: my-app
+    nodeSelector:
+      matchLabels:
+        worker: my-worker
+  node:
+    image: "my-node-image"
+    instance: 3
+    resources:
+      limits:
+        cpu: "4"
+        memory: "4Gi"
+      requests:
+        cpu: "2"
+        memory: "2Gi"
+    labels:
+      matchLabels:
+        app: my-app
+    nodeSelector:
+      matchLabels:
+        worker: my-worker
