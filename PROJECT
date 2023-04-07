@@ -1,0 +1,7 @@
+domain: apulis.cn
+repo: github.com/aistudio/slurm-operator
+resources:
+- group: slurmoperator
+  kind: SlurmApplication
+  version: v1beta1
+version: "2"

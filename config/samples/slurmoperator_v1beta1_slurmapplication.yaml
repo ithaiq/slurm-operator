@@ -1,0 +1,7 @@
+apiVersion: slurmoperator.apulis.cn/v1beta1
+kind: SlurmApplication
+metadata:
+  name: slurmapplication-sample
+spec:
+  # Add fields here
+  foo: bar

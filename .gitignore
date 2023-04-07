@@ -1,0 +1,24 @@
+# Binary files
+*.exe
+*.o
+*.obj
+
+# Go specific files
+# Compiled Object files, Static and Dynamic libs (Shared Objects)
+*.go
+*.a
+*.o
+*.so
+
+# Test binary, go test -c
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Dependency directories (remove the comment below to include it)
+vendor/
+.idea/
+
+# Vim swap files
+.swp

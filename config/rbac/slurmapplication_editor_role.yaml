@@ -1,0 +1,24 @@
+# permissions for end users to edit slurmapplications.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: slurmapplication-editor-role
+rules:
+- apiGroups:
+  - slurmoperator.apulis.cn
+  resources:
+  - slurmapplications
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - slurmoperator.apulis.cn
+  resources:
+  - slurmapplications/status
+  verbs:
+  - get

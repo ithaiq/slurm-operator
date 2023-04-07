@@ -1,0 +1,20 @@
+# permissions for end users to view slurmapplications.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: slurmapplication-viewer-role
+rules:
+- apiGroups:
+  - slurmoperator.apulis.cn
+  resources:
+  - slurmapplications
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - slurmoperator.apulis.cn
+  resources:
+  - slurmapplications/status
+  verbs:
+  - get
