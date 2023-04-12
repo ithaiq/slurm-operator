@@ -30,21 +30,21 @@ type SlurmApplicationSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of SlurmApplication. Edit SlurmApplication_types.go to remove/update
-	Jupyter *SlurmJupyterSpec `json:"jupyter"`
-	Master  *SlurmMasterSpec  `json:"master"`
-	Node    *SlurmNodeSpec    `json:"node"`
+	Jupyter SlurmJupyterSpec `json:"jupyter"`
+	Master  SlurmMasterSpec  `json:"master"`
+	Node    SlurmNodeSpec    `json:"node"`
 }
 
 type SlurmJupyterSpec struct {
-	CommonSpec `json:".,inline"`
+	CommonSpec `json:",inline"`
 }
 
 type SlurmMasterSpec struct {
-	CommonSpec `json:".,inline"`
+	CommonSpec `json:",inline"`
 }
 
 type SlurmNodeSpec struct {
-	CommonSpec `json:".,inline"`
+	CommonSpec `json:",inline"`
 }
 
 type CommonSpec struct {
@@ -55,26 +55,34 @@ type CommonSpec struct {
 	// +kubebuilder:default=1
 	Instance int `json:"instance,omitempty"`
 
-	Resources    *corev1.ResourceRequirements `json:"resources,omitempty"`
-	Labels       *metav1.LabelSelector        `json:"labels,omitempty"`
-	NodeSelector *corev1.NodeSelector         `json:"nodeSelector,omitempty"`
+	Resources    corev1.ResourceRequirements `json:"resources,omitempty"`
+	Labels       map[string]string           `json:"labels,omitempty"`
+	NodeSelector map[string]string           `json:"nodeSelector,omitempty"`
 }
 
-// SlurmApplicationStatus defines the observed state of SlurmApplication
-type SlurmApplicationStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-}
+type SlurmClusterPhase string
+
+var (
+	SlurmClusterStatusRunning SlurmClusterPhase = "Running"
+	SlurmClusterStatusError   SlurmClusterPhase = "Error"
+)
 
 // +kubebuilder:object:root=true
+// +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status",description="Slurm app status"
+// +kubebuilder:printcolumn:name="NodeInstance",type="integer",JSONPath=".spec.node.instance",description="The Num of Slurm node"
+// +kubebuilder:printcolumn:name="JupyterImage",type="string",JSONPath=".spec.jupyter.image",description="The Docker Image of jupyter"
+// +kubebuilder:printcolumn:name="SlurmMasterImage",type="string",JSONPath=".spec.master.image",description="The Docker Image of Slurm master"
+// +kubebuilder:printcolumn:name="SlurmNodeImage",type="string",JSONPath=".spec.node.image",description="The Docker Image of Slurm node"
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:subresource:status
 
 // SlurmApplication is the Schema for the slurmapplications API
 type SlurmApplication struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   SlurmApplicationSpec   `json:"spec,omitempty"`
-	Status SlurmApplicationStatus `json:"status,omitempty"`
+	Spec   SlurmApplicationSpec `json:"spec,omitempty"`
+	Status SlurmClusterPhase    `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true

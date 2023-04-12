@@ -67,9 +67,10 @@ func main() {
 	}
 
 	if err = (&controllers.SlurmApplicationReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("SlurmApplication"),
-		Scheme: mgr.GetScheme(),
+		Client:   mgr.GetClient(),
+		Log:      ctrl.Log.WithName("controllers").WithName("SlurmApplication"),
+		Recorder: mgr.GetEventRecorderFor("SlurmApplication-Controller"),
+		Scheme:   mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "SlurmApplication")
 		os.Exit(1)

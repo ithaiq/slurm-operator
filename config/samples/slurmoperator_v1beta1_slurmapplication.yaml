@@ -4,8 +4,7 @@ metadata:
   name: slurmapplication-sample
 spec:
   jupyter:
-    image: "my-jupyter-image"
-    instance: 2
+    image: rancavil/slurm-jupyter:19.05.5-1
     resources:
       limits:
         cpu: "1"
@@ -14,40 +13,29 @@ spec:
         cpu: "500m"
         memory: "500Mi"
     labels:
-      matchLabels:
-        app: my-app
+      test: "3"
     nodeSelector:
-      matchLabels:
-        worker: my-worker
+      kubernetes.io/role: "master"
   master:
-    image: "my-master-image"
-    instance: 1
+    image: rancavil/slurm-master:19.05.5-1
     resources:
       limits:
         cpu: "2"
         memory: "2Gi"
       requests:
-        cpu: "1"
-        memory: "1Gi"
+        cpu: "2"
+        memory: "2Gi"
     labels:
-      matchLabels:
-        app: my-app
-    nodeSelector:
-      matchLabels:
-        worker: my-worker
+      test: "3"
   node:
-    image: "my-node-image"
-    instance: 3
+    image: rancavil/slurm-node:19.05.5-1
+    instance: 4
     resources:
       limits:
-        cpu: "4"
-        memory: "4Gi"
+        cpu: "2"
+        memory: "2Gi"
       requests:
         cpu: "2"
         memory: "2Gi"
     labels:
-      matchLabels:
-        app: my-app
-    nodeSelector:
-      matchLabels:
-        worker: my-worker
+      test: "3"
