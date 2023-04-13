@@ -233,7 +233,7 @@ func (s *SlurmApplicationHandler) generateSlurmSvc(app *slurmoperatorv1beta1.Slu
 		},
 	}
 	if err := controllerutil.SetControllerReference(app, svc, s.Scheme); err != nil {
-		return nil, fmt.Errorf("setting pod controller reference error : %s", err)
+		return nil, fmt.Errorf("setting svc controller reference error : %s", err)
 	}
 	return svc, nil
 }
@@ -267,7 +267,7 @@ func (s *SlurmApplicationHandler) generateJupyterSvc(app *slurmoperatorv1beta1.S
 		},
 	}
 	if err := controllerutil.SetControllerReference(app, svc, s.Scheme); err != nil {
-		return nil, fmt.Errorf("setting pod controller reference error : %s", err)
+		return nil, fmt.Errorf("setting svc controller reference error : %s", err)
 	}
 	return svc, nil
 }

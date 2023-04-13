@@ -63,6 +63,7 @@ type CommonSpec struct {
 type SlurmClusterPhase string
 
 var (
+	SlurmClusterStatusPending SlurmClusterPhase = "Pending"
 	SlurmClusterStatusRunning SlurmClusterPhase = "Running"
 	SlurmClusterStatusError   SlurmClusterPhase = "Error"
 )

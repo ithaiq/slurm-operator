@@ -47,6 +47,7 @@ func (r *SlurmApplicationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, e
 
 	resource, err := r.GetSlurmApplicationResource(ctx, req)
 	if err != nil {
+		r.Recorder.Event(resource.app, corev1.EventTypeWarning, "GetSlurmApplicationResource-Failed", err.Error())
 		return ctrl.Result{}, err
 	}
 	var action Action
@@ -58,52 +59,60 @@ func (r *SlurmApplicationReconciler) Reconcile(req ctrl.Request) (ctrl.Result, e
 	case resource.app.Status == "":
 		log.Info("slurm app staring. Updating status.")
 		newBackup := resource.app.DeepCopy()
-		newBackup.Status = slurmoperatorv1beta1.SlurmClusterStatusRunning
+		newBackup.Status = slurmoperatorv1beta1.SlurmClusterStatusPending
 		action = &PatchStatus{client: r.Client, original: resource.app, new: newBackup}
-	case resource.app.Status == slurmoperatorv1beta1.SlurmClusterStatusRunning ||
+	case resource.app.Status == slurmoperatorv1beta1.SlurmClusterStatusPending ||
+		resource.app.Status == slurmoperatorv1beta1.SlurmClusterStatusRunning ||
 		resource.app.Status == slurmoperatorv1beta1.SlurmClusterStatusError:
 		log.Info("slurm app start create or update resources...")
-		originals := map[string]runtime.Object{}
-		news := map[string]runtime.Object{}
-		for key, item := range resource.actual.pods {
-			originals[key] = item
-		}
-		for key, item := range resource.actual.svcs {
-			originals[fmt.Sprintf("%ssvc", key)] = item
-		}
-		for key, item := range resource.desired.pods {
-			news[key] = item
-		}
-		for key, item := range resource.desired.svcs {
-			news[fmt.Sprintf("%ssvc", key)] = item
-		}
+		originals, news := r.convertToObject(resource)
 		action = &BatchCreateOrUpdateObject{client: r.Client, news: news, originals: originals}
 	}
-	var ignore bool
+	var noChange bool
 	if action != nil {
-		if ignore, err = action.Execute(ctx); err != nil {
+		if noChange, err = action.Execute(ctx); err != nil {
+			r.Recorder.Event(resource.app, corev1.EventTypeWarning, "ActionExecute-Failed", err.Error())
 			return ctrl.Result{}, fmt.Errorf("executing action error: %s", err)
 		}
 	}
 	//未有变动说明监听到子资源的变化
-	if ignore {
-		isHealthy := r.IsSlurmApplicationHealthy(resource)
+	if noChange {
+		isHealthy := r.isSlurmApplicationHealthy(resource)
 		newBackup := resource.app.DeepCopy()
-		//如果子资源处于健康状态并且自身是不正常的则更新自身状态为正常状态
-		if isHealthy && resource.app.Status == slurmoperatorv1beta1.SlurmClusterStatusError {
+		//如果子资源处于健康状态并且自身不是Running状态则更新Running状态
+		if isHealthy && resource.app.Status != slurmoperatorv1beta1.SlurmClusterStatusRunning {
 			newBackup.Status = slurmoperatorv1beta1.SlurmClusterStatusRunning
 		}
-		//如果子资源处于非健康状态并且自身是正常的则更新自身状态为错误状态
+		//如果子资源处于非健康状态并且自身是Running状态则更新Error状态（兼容pending状态）
 		if !isHealthy && resource.app.Status == slurmoperatorv1beta1.SlurmClusterStatusRunning {
 			newBackup.Status = slurmoperatorv1beta1.SlurmClusterStatusError
 			log.Info("slurm resources has error. please check event to fix")
 		}
 		action = &PatchStatus{client: r.Client, original: resource.app, new: newBackup}
 		if _, err = action.Execute(ctx); err != nil {
+			r.Recorder.Event(resource.app, corev1.EventTypeWarning, "PatchStatus-Failed", err.Error())
 			return ctrl.Result{}, fmt.Errorf("executing PatchStatus error: %s", err)
 		}
 	}
 	return ctrl.Result{}, nil
+}
+
+func (r *SlurmApplicationReconciler) convertToObject(resource *SlurmApplicationResource) (map[string]runtime.Object, map[string]runtime.Object) {
+	originals := map[string]runtime.Object{}
+	news := map[string]runtime.Object{}
+	for key, item := range resource.actual.pods {
+		originals[key] = item
+	}
+	for key, item := range resource.actual.svcs {
+		originals[key] = item
+	}
+	for key, item := range resource.desired.pods {
+		news[key] = item
+	}
+	for key, item := range resource.desired.svcs {
+		news[key] = item
+	}
+	return originals, news
 }
 
 func (r *SlurmApplicationReconciler) GetSlurmApplicationResource(ctx context.Context, req ctrl.Request) (*SlurmApplicationResource, error) {
@@ -115,21 +124,32 @@ func (r *SlurmApplicationReconciler) GetSlurmApplicationResource(ctx context.Con
 		return saResource, client.IgnoreNotFound(err)
 	}
 	saResource = NewSlurmApplicationResource(&slurmApp)
-	if err := saResource.SetStateActual(ctx, r.Scheme, r.Client); err != nil {
-		return nil, fmt.Errorf("setting actual state error: %s", err)
+	if err := saResource.SetActualSlurmResource(ctx, r.Scheme, r.Client); err != nil {
+		return nil, fmt.Errorf("setting actual slurm resource error: %s", err)
 	}
-	if err := saResource.SetStateDesired(ctx, r.Scheme, r.Client); err != nil {
-		return nil, fmt.Errorf("setting desired state error: %s", err)
+	if err := saResource.SetDesiredSlurmResource(ctx, r.Scheme, r.Client); err != nil {
+		return nil, fmt.Errorf("setting desired slurm resource error: %s", err)
 	}
 	return saResource, nil
 }
 
-func (r *SlurmApplicationReconciler) IsSlurmApplicationHealthy(resource *SlurmApplicationResource) bool {
+func (r *SlurmApplicationReconciler) isSlurmApplicationHealthy(resource *SlurmApplicationResource) bool {
 	for _, pod := range resource.actual.pods {
 		if pod.Status.Phase != corev1.PodRunning {
 			return false
 		}
+		ready := false
+		for _, condition := range pod.Status.Conditions {
+			if condition.Type == corev1.PodReady && condition.Status == corev1.ConditionTrue {
+				ready = true
+				break
+			}
+		}
+		if !ready {
+			return false
+		}
 	}
+	//TODO 是否需要检查service是否健康
 	return true
 }
 
