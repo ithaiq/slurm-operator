@@ -15,6 +15,7 @@ type SlurmApplicationResource struct {
 	actual *SlurmApplicationContainer
 	// 期望的资源
 	desired *SlurmApplicationContainer
+	handler *SlurmApplicationHandler
 }
 
 type SlurmApplicationContainer struct {
@@ -22,7 +23,7 @@ type SlurmApplicationContainer struct {
 	svcs map[string]*corev1.Service
 }
 
-func NewSlurmApplicationResource(app *slurmoperatorv1beta1.SlurmApplication) *SlurmApplicationResource {
+func NewSlurmApplicationResource(app *slurmoperatorv1beta1.SlurmApplication, scheme *runtime.Scheme, client client.Client) *SlurmApplicationResource {
 	return &SlurmApplicationResource{
 		app: app,
 		actual: &SlurmApplicationContainer{
@@ -33,32 +34,31 @@ func NewSlurmApplicationResource(app *slurmoperatorv1beta1.SlurmApplication) *Sl
 			pods: make(map[string]*corev1.Pod),
 			svcs: make(map[string]*corev1.Service),
 		},
+		handler: NewSlurmApplicationHandler(scheme, client),
 	}
 }
 
-func (r *SlurmApplicationResource) SetActualSlurmResource(ctx context.Context, scheme *runtime.Scheme, client client.Client) (err error) {
+func (r *SlurmApplicationResource) SetActualSlurmResource(ctx context.Context) (err error) {
 	ns := r.app.Namespace
-	saResource := NewSlurmApplicationHandler(scheme, client)
-	if r.actual.pods[PodSlurmJupyter], r.actual.svcs[SvcSlurmJupyter], err = saResource.GetSlurmApplicationResource(ctx, SlurmJupyter, ns); err != nil {
+	if r.actual.pods[PodSlurmJupyter], r.actual.svcs[SvcSlurmJupyter], err = r.handler.GetSlurmApplicationResource(ctx, SlurmJupyter, ns); err != nil {
 		return err
 	}
-	if r.actual.pods[PodSlurmMaster], r.actual.svcs[SvcSlurmMaster], err = saResource.GetSlurmApplicationResource(ctx, SlurmMaster, ns); err != nil {
+	if r.actual.pods[PodSlurmMaster], r.actual.svcs[SvcSlurmMaster], err = r.handler.GetSlurmApplicationResource(ctx, SlurmMaster, ns); err != nil {
 		return err
 	}
 	for i := 1; i <= r.app.Spec.Node.Instance; i++ {
 		name := SlurmNode + strconv.Itoa(i)
 		podName := PodSlurmNode + strconv.Itoa(i)
 		svcName := SvcSlurmNode + strconv.Itoa(i)
-		if r.actual.pods[podName], r.actual.svcs[svcName], err = saResource.GetSlurmApplicationResource(ctx, name, ns); err != nil {
+		if r.actual.pods[podName], r.actual.svcs[svcName], err = r.handler.GetSlurmApplicationResource(ctx, name, ns); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (r *SlurmApplicationResource) SetDesiredSlurmResource(ctx context.Context, scheme *runtime.Scheme, client client.Client) (err error) {
-	saResource := NewSlurmApplicationHandler(scheme, client)
-	if r.desired.pods[PodSlurmJupyter], r.desired.svcs[SvcSlurmJupyter], err = saResource.GenerateJupyterResource(
+func (r *SlurmApplicationResource) SetDesiredSlurmResource(ctx context.Context) (err error) {
+	if r.desired.pods[PodSlurmJupyter], r.desired.svcs[SvcSlurmJupyter], err = r.handler.GenerateJupyterResource(
 		r.app,
 		r.actual.pods[PodSlurmJupyter],
 		r.actual.svcs[SvcSlurmJupyter],
@@ -66,7 +66,7 @@ func (r *SlurmApplicationResource) SetDesiredSlurmResource(ctx context.Context, 
 	); err != nil {
 		return err
 	}
-	if r.desired.pods[PodSlurmMaster], r.desired.svcs[SvcSlurmMaster], err = saResource.GenerateSlurmResource(
+	if r.desired.pods[PodSlurmMaster], r.desired.svcs[SvcSlurmMaster], err = r.handler.GenerateSlurmResource(
 		r.app,
 		&r.app.Spec.Master.CommonSpec,
 		r.actual.pods[PodSlurmMaster],
@@ -79,7 +79,7 @@ func (r *SlurmApplicationResource) SetDesiredSlurmResource(ctx context.Context, 
 		name := SlurmNode + strconv.Itoa(i)
 		podName := PodSlurmNode + strconv.Itoa(i)
 		svcName := SvcSlurmNode + strconv.Itoa(i)
-		if r.desired.pods[podName], r.desired.svcs[svcName], err = saResource.GenerateSlurmResource(
+		if r.desired.pods[podName], r.desired.svcs[svcName], err = r.handler.GenerateSlurmResource(
 			r.app,
 			&r.app.Spec.Node.CommonSpec,
 			r.actual.pods[podName],

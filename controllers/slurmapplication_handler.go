@@ -13,14 +13,14 @@ import (
 )
 
 type SlurmApplicationHandler struct {
-	Scheme *runtime.Scheme
-	Client client.Client
+	scheme *runtime.Scheme
+	client client.Client
 }
 
 func NewSlurmApplicationHandler(scheme *runtime.Scheme, client client.Client) *SlurmApplicationHandler {
 	return &SlurmApplicationHandler{
-		Scheme: scheme,
-		Client: client,
+		scheme: scheme,
+		client: client,
 	}
 }
 
@@ -131,7 +131,7 @@ func (s *SlurmApplicationHandler) generateSlurmPod(app *slurmoperatorv1beta1.Slu
 	} else {
 		pod.Spec.Containers[0].Image = cs.Image
 	}
-	if err := controllerutil.SetControllerReference(app, pod, s.Scheme); err != nil {
+	if err := controllerutil.SetControllerReference(app, pod, s.scheme); err != nil {
 		return nil, fmt.Errorf("setting pod controller reference error : %s", err)
 	}
 	return pod, nil
@@ -189,7 +189,7 @@ func (s *SlurmApplicationHandler) generateJupyterPod(app *slurmoperatorv1beta1.S
 			NodeSelector: app.Spec.Jupyter.NodeSelector,
 		}
 	}
-	if err := controllerutil.SetControllerReference(app, pod, s.Scheme); err != nil {
+	if err := controllerutil.SetControllerReference(app, pod, s.scheme); err != nil {
 		return nil, fmt.Errorf("setting pod controller reference error : %s", err)
 	}
 	return pod, nil
@@ -232,7 +232,7 @@ func (s *SlurmApplicationHandler) generateSlurmSvc(app *slurmoperatorv1beta1.Slu
 			},
 		},
 	}
-	if err := controllerutil.SetControllerReference(app, svc, s.Scheme); err != nil {
+	if err := controllerutil.SetControllerReference(app, svc, s.scheme); err != nil {
 		return nil, fmt.Errorf("setting svc controller reference error : %s", err)
 	}
 	return svc, nil
@@ -266,7 +266,7 @@ func (s *SlurmApplicationHandler) generateJupyterSvc(app *slurmoperatorv1beta1.S
 			},
 		},
 	}
-	if err := controllerutil.SetControllerReference(app, svc, s.Scheme); err != nil {
+	if err := controllerutil.SetControllerReference(app, svc, s.scheme); err != nil {
 		return nil, fmt.Errorf("setting svc controller reference error : %s", err)
 	}
 	return svc, nil
@@ -278,7 +278,7 @@ func (s *SlurmApplicationHandler) getPodByNamespacedName(ctx context.Context, na
 		Namespace: nameSpace,
 	}
 	pod := &corev1.Pod{}
-	err := s.Client.Get(ctx, key, pod)
+	err := s.client.Get(ctx, key, pod)
 	if err != nil {
 		pod = nil
 	}
@@ -291,7 +291,7 @@ func (s *SlurmApplicationHandler) getSvcByNamespacedName(ctx context.Context, na
 		Namespace: nameSpace,
 	}
 	svc := &corev1.Service{}
-	err := s.Client.Get(ctx, key, svc)
+	err := s.client.Get(ctx, key, svc)
 	if err != nil {
 		svc = nil
 	}

@@ -123,11 +123,11 @@ func (r *SlurmApplicationReconciler) GetSlurmApplicationResource(ctx context.Con
 	if err := r.Get(ctx, req.NamespacedName, &slurmApp); err != nil {
 		return saResource, client.IgnoreNotFound(err)
 	}
-	saResource = NewSlurmApplicationResource(&slurmApp)
-	if err := saResource.SetActualSlurmResource(ctx, r.Scheme, r.Client); err != nil {
+	saResource = NewSlurmApplicationResource(&slurmApp, r.Scheme, r.Client)
+	if err := saResource.SetActualSlurmResource(ctx); err != nil {
 		return nil, fmt.Errorf("setting actual slurm resource error: %s", err)
 	}
-	if err := saResource.SetDesiredSlurmResource(ctx, r.Scheme, r.Client); err != nil {
+	if err := saResource.SetDesiredSlurmResource(ctx); err != nil {
 		return nil, fmt.Errorf("setting desired slurm resource error: %s", err)
 	}
 	return saResource, nil
