@@ -1,8 +1,38 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: slurm-pv-test
+spec:
+  capacity:
+    storage: 100Mi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  hostPath:
+    path: /root/test
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: slurm-pvc-test
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+  volumeName: slurm-pv-test
+---
 apiVersion: slurmoperator.apulis.cn/v1beta1
 kind: SlurmApplication
 metadata:
   name: slurmapplication-sample
 spec:
+  volumes:
+    - name: shared-pvc
+      persistentVolumeClaim:
+        claimName: slurm-pvc-test
   jupyter:
     image: rancavil/slurm-jupyter:19.05.5-1
     resources:
@@ -16,6 +46,9 @@ spec:
       test: "3"
     nodeSelector:
       kubernetes.io/role: "master"
+    volumeMounts:
+      - name: shared-pvc
+        mountPath: /home/admin
   master:
     image: rancavil/slurm-master:19.05.5-1
     resources:
@@ -27,6 +60,9 @@ spec:
         memory: "2Gi"
     labels:
       test: "3"
+    volumeMounts:
+      - name: shared-pvc
+        mountPath: /home/admin
   node:
     image: rancavil/slurm-node:19.05.5-1
     instance: 4
@@ -39,3 +75,6 @@ spec:
         memory: "2Gi"
     labels:
       test: "3"
+    volumeMounts:
+      - name: shared-pvc
+        mountPath: /home/admin

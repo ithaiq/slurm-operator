@@ -24,12 +24,21 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+type SlurmClusterPhase string
+
+var (
+	SlurmClusterStatusPending SlurmClusterPhase = "Pending"
+	SlurmClusterStatusRunning SlurmClusterPhase = "Running"
+	SlurmClusterStatusError   SlurmClusterPhase = "Error"
+)
+
 // SlurmApplicationSpec defines the desired state of SlurmApplication
 type SlurmApplicationSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of SlurmApplication. Edit SlurmApplication_types.go to remove/update
+	Volumes []corev1.Volume  `json:"volumes,omitempty"`
 	Jupyter SlurmJupyterSpec `json:"jupyter"`
 	Master  SlurmMasterSpec  `json:"master"`
 	Node    SlurmNodeSpec    `json:"node"`
@@ -58,15 +67,8 @@ type CommonSpec struct {
 	Resources    corev1.ResourceRequirements `json:"resources,omitempty"`
 	Labels       map[string]string           `json:"labels,omitempty"`
 	NodeSelector map[string]string           `json:"nodeSelector,omitempty"`
+	VolumeMounts []corev1.VolumeMount        `json:"volumeMounts,omitempty"`
 }
-
-type SlurmClusterPhase string
-
-var (
-	SlurmClusterStatusPending SlurmClusterPhase = "Pending"
-	SlurmClusterStatusRunning SlurmClusterPhase = "Running"
-	SlurmClusterStatusError   SlurmClusterPhase = "Error"
-)
 
 // +kubebuilder:object:root=true
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status",description="Slurm app status"

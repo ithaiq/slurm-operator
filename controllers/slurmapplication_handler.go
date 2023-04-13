@@ -97,17 +97,12 @@ func (s *SlurmApplicationHandler) generateSlurmPod(app *slurmoperatorv1beta1.Slu
 							ContainerPort: 6819,
 						},
 					},
-					Resources: cs.Resources,
-					VolumeMounts: []corev1.VolumeMount{
-						{
-							Name:      pod.Name,
-							MountPath: "/home/admin",
-						},
-					},
+					Resources:    cs.Resources,
+					VolumeMounts: cs.VolumeMounts,
 					Env: []corev1.EnvVar{
 						{
 							Name:  "SLURM_CPUS_ON_NODE",
-							Value: "4",
+							Value: cs.Resources.Limits.Cpu().String(),
 						},
 						{
 							Name:  "SLURM_NODENAME",
@@ -116,16 +111,8 @@ func (s *SlurmApplicationHandler) generateSlurmPod(app *slurmoperatorv1beta1.Slu
 					},
 				},
 			},
-			Hostname:           pod.Name,
-			ServiceAccountName: "default",
-			Volumes: []corev1.Volume{
-				{
-					Name: pod.Name,
-					VolumeSource: corev1.VolumeSource{
-						HostPath: &corev1.HostPathVolumeSource{Path: "/root/test"},
-					},
-				},
-			},
+			Hostname:     pod.Name,
+			Volumes:      app.Spec.Volumes,
 			NodeSelector: cs.NodeSelector,
 		}
 	} else {
@@ -168,24 +155,12 @@ func (s *SlurmApplicationHandler) generateJupyterPod(app *slurmoperatorv1beta1.S
 							ContainerPort: 8888,
 						},
 					},
-					Resources: app.Spec.Jupyter.Resources,
-					VolumeMounts: []corev1.VolumeMount{
-						{
-							Name:      pod.Name,
-							MountPath: "/home/admin",
-						},
-					},
+					Resources:    app.Spec.Jupyter.Resources,
+					VolumeMounts: app.Spec.Jupyter.VolumeMounts,
 				},
 			},
-			Hostname: pod.Name,
-			Volumes: []corev1.Volume{
-				{
-					Name: pod.Name,
-					VolumeSource: corev1.VolumeSource{
-						HostPath: &corev1.HostPathVolumeSource{Path: "/root/test"},
-					},
-				},
-			},
+			Hostname:     pod.Name,
+			Volumes:      app.Spec.Volumes,
 			NodeSelector: app.Spec.Jupyter.NodeSelector,
 		}
 	}
