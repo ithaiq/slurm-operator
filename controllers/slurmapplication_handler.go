@@ -24,156 +24,157 @@ func NewSlurmApplicationHandler(scheme *runtime.Scheme, client client.Client) *S
 	}
 }
 
-func (s *SlurmApplicationHandler) GenerateSlurmResource(app *slurmoperatorv1beta1.SlurmApplication, cs *slurmoperatorv1beta1.CommonSpec, pod *corev1.Pod, svc *corev1.Service, name string) (*corev1.Pod, *corev1.Service, error) {
-	pod, err := s.generateSlurmPod(app, cs, pod, name)
-	if err != nil {
-		return nil, nil, err
+func (s *SlurmApplicationHandler) GetPodByNamespacedName(ctx context.Context, name, nameSpace string) (*corev1.Pod, error) {
+	key := client.ObjectKey{
+		Name:      name,
+		Namespace: nameSpace,
 	}
-	svc, err = s.generateSlurmSvc(app, svc, name)
+	pod := &corev1.Pod{}
+	err := s.client.Get(ctx, key, pod)
 	if err != nil {
-		return nil, nil, err
+		pod = nil
 	}
-	return pod, svc, nil
+	return pod, client.IgnoreNotFound(err)
 }
 
-func (s *SlurmApplicationHandler) GenerateJupyterResource(app *slurmoperatorv1beta1.SlurmApplication, pod *corev1.Pod, svc *corev1.Service, name string) (*corev1.Pod, *corev1.Service, error) {
-	pod, err := s.generateJupyterPod(app, pod, name)
-	if err != nil {
-		return nil, nil, err
+func (s *SlurmApplicationHandler) GetSvcByNamespacedName(ctx context.Context, name, nameSpace string) (*corev1.Service, error) {
+	key := client.ObjectKey{
+		Name:      name,
+		Namespace: nameSpace,
 	}
-	svc, err = s.generateJupyterSvc(app, svc, name)
+	svc := &corev1.Service{}
+	err := s.client.Get(ctx, key, svc)
 	if err != nil {
-		return nil, nil, err
+		svc = nil
 	}
-	return pod, svc, nil
+	return svc, client.IgnoreNotFound(err)
 }
 
-func (s *SlurmApplicationHandler) GetSlurmApplicationResource(ctx context.Context, name, nameSpace string) (*corev1.Pod, *corev1.Service, error) {
-	pod, err := s.getPodByNamespacedName(ctx, name, nameSpace)
-	if err != nil {
-		return nil, nil, err
-	}
-	svc, err := s.getSvcByNamespacedName(ctx, name, nameSpace)
-	if err != nil {
-		return nil, nil, err
-	}
-	return pod, svc, nil
-}
-
-func (s *SlurmApplicationHandler) generateSlurmPod(app *slurmoperatorv1beta1.SlurmApplication, cs *slurmoperatorv1beta1.CommonSpec, srcPod *corev1.Pod, name string) (*corev1.Pod, error) {
-	pod := &corev1.Pod{
+func (s *SlurmApplicationHandler) GenerateSubSlurmPod(app *slurmoperatorv1beta1.SlurmApplication, cs *slurmoperatorv1beta1.CommonSpec, name string) (pod *corev1.Pod, err error) {
+	pod = &corev1.Pod{
 		TypeMeta: metav1.TypeMeta{Kind: "Pod", APIVersion: "v1"},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: app.Namespace,
+			Labels: map[string]string{
+				SlurmApplicationLabelKey: name,
+			},
 		},
-	}
-	if srcPod != nil {
-		pod = srcPod.DeepCopy()
-	}
-	pod.Labels = map[string]string{
-		SlurmApplicationLabelKey: pod.Name,
 	}
 	for k, v := range cs.Labels {
 		pod.Labels[k] = v
 	}
-	if len(pod.Spec.Containers) == 0 {
-		pod.Spec = corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Image: cs.Image,
-					Name:  pod.Name,
-					Ports: []corev1.ContainerPort{
-						{
-							Name:          "6817p",
-							ContainerPort: 6817,
-						},
-						{
-							Name:          "6818p",
-							ContainerPort: 6818,
-						},
-						{
-							Name:          "6819p",
-							ContainerPort: 6819,
-						},
+	pod.Spec = corev1.PodSpec{
+		Containers: []corev1.Container{
+			{
+				Image: cs.Image,
+				Name:  pod.Name,
+				Ports: []corev1.ContainerPort{
+					{
+						Name:          "6817p",
+						ContainerPort: 6817,
 					},
-					Resources:    cs.Resources,
-					VolumeMounts: cs.VolumeMounts,
-					Env: []corev1.EnvVar{
-						{
-							Name:  "SLURM_CPUS_ON_NODE",
-							Value: cs.Resources.Limits.Cpu().String(),
-						},
-						{
-							Name:  "SLURM_NODENAME",
-							Value: pod.Name,
-						},
+					{
+						Name:          "6818p",
+						ContainerPort: 6818,
+					},
+					{
+						Name:          "6819p",
+						ContainerPort: 6819,
 					},
 				},
+				Resources:    cs.Resources,
+				VolumeMounts: cs.VolumeMounts,
+				Env: []corev1.EnvVar{
+					{
+						Name:  "SLURM_CPUS_ON_NODE",
+						Value: cs.Resources.Limits.Cpu().String(),
+					},
+					{
+						Name:  "SLURM_NODENAME",
+						Value: pod.Name,
+					},
+				},
+				Command: []string{"/bin/sh", "-c"},
+				Args: []string{
+					GetPrePodRunCommand(
+						fmt.Sprintf(SedMasterName, GetSlurmResourceName(app.Name, SlurmMaster)),
+						fmt.Sprintf(SedNodeName, GetSlurmResourceName(app.Name, SlurmNode)),
+						SedNLogFile,
+						SedMLogFile,
+						SedMLogLevel,
+						SedNLogLevel,
+						SedSLogFile,
+						SedSLogLevel,
+						CmdRun,
+					),
+				},
 			},
-			Hostname:     pod.Name,
-			Volumes:      app.Spec.Volumes,
-			NodeSelector: cs.NodeSelector,
-		}
-	} else {
-		pod.Spec.Containers[0].Image = cs.Image
+		},
+		Hostname:     name,
+		Volumes:      app.Spec.Volumes,
+		NodeSelector: cs.NodeSelector,
 	}
-	if err := controllerutil.SetControllerReference(app, pod, s.scheme); err != nil {
+	if err = controllerutil.SetControllerReference(app, pod, s.scheme); err != nil {
 		return nil, fmt.Errorf("setting pod controller reference error : %s", err)
 	}
 	return pod, nil
 }
 
-func (s *SlurmApplicationHandler) generateJupyterPod(app *slurmoperatorv1beta1.SlurmApplication, srcPod *corev1.Pod, name string) (*corev1.Pod, error) {
-	pod := &corev1.Pod{
+func (s *SlurmApplicationHandler) GenerateJupyterPod(app *slurmoperatorv1beta1.SlurmApplication, name string) (pod *corev1.Pod, err error) {
+	pod = &corev1.Pod{
 		TypeMeta: metav1.TypeMeta{Kind: "Pod", APIVersion: "v1"},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: app.Namespace,
+			Labels: map[string]string{
+				SlurmApplicationLabelKey: name,
+			},
 		},
-	}
-	if srcPod != nil {
-		pod = srcPod.DeepCopy()
-	}
-	pod.Labels = map[string]string{
-		SlurmApplicationLabelKey: pod.Name,
 	}
 	for k, v := range app.Spec.Jupyter.Labels {
 		pod.Labels[k] = v
 	}
-	if len(pod.Spec.Containers) > 0 {
-		pod.Spec.Containers[0].Image = app.Spec.Jupyter.Image
-	} else {
-		pod.Spec = corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Image: app.Spec.Jupyter.Image,
-					Name:  pod.Name,
-					Ports: []corev1.ContainerPort{
-						{
-							Name:          "8888p",
-							ContainerPort: 8888,
-						},
+	pod.Spec = corev1.PodSpec{
+		Containers: []corev1.Container{
+			{
+				Image: app.Spec.Jupyter.Image,
+				Name:  name,
+				Ports: []corev1.ContainerPort{
+					{
+						Name:          "8888p",
+						ContainerPort: 8888,
 					},
-					Resources:    app.Spec.Jupyter.Resources,
-					VolumeMounts: app.Spec.Jupyter.VolumeMounts,
 				},
+				Command: []string{"/bin/sh", "-c"},
+				Args: []string{
+					GetPrePodRunCommand(
+						fmt.Sprintf(SedMasterName, GetSlurmResourceName(app.Name, SlurmMaster)),
+						fmt.Sprintf(SedNodeName, GetSlurmResourceName(app.Name, SlurmNode)),
+						SedNLogFile,
+						SedMLogFile,
+						SedSLogFile,
+						SedMLogLevel,
+						SedNLogLevel,
+						SedSLogLevel,
+						CmdRun,
+					),
+				},
+				Resources:    app.Spec.Jupyter.Resources,
+				VolumeMounts: app.Spec.Jupyter.VolumeMounts,
 			},
-			Hostname:     pod.Name,
-			Volumes:      app.Spec.Volumes,
-			NodeSelector: app.Spec.Jupyter.NodeSelector,
-		}
+		},
+		Hostname:     name,
+		Volumes:      app.Spec.Volumes,
+		NodeSelector: app.Spec.Jupyter.NodeSelector,
 	}
-	if err := controllerutil.SetControllerReference(app, pod, s.scheme); err != nil {
+	if err = controllerutil.SetControllerReference(app, pod, s.scheme); err != nil {
 		return nil, fmt.Errorf("setting pod controller reference error : %s", err)
 	}
 	return pod, nil
 }
 
-func (s *SlurmApplicationHandler) generateSlurmSvc(app *slurmoperatorv1beta1.SlurmApplication, svc *corev1.Service, name string) (*corev1.Service, error) {
-	if svc != nil {
-		return svc, nil
-	}
+func (s *SlurmApplicationHandler) GenerateSubSlurmSvc(app *slurmoperatorv1beta1.SlurmApplication, name string) (svc *corev1.Service, err error) {
 	svc = &corev1.Service{
 		TypeMeta: metav1.TypeMeta{Kind: "Service", APIVersion: "v1"},
 		ObjectMeta: metav1.ObjectMeta{
@@ -187,7 +188,7 @@ func (s *SlurmApplicationHandler) generateSlurmSvc(app *slurmoperatorv1beta1.Slu
 	svc.Spec = corev1.ServiceSpec{
 		Type: corev1.ServiceTypeClusterIP,
 		Selector: map[string]string{
-			SlurmApplicationLabelKey: svc.Name,
+			SlurmApplicationLabelKey: name,
 		},
 		Ports: []corev1.ServicePort{
 			{
@@ -207,16 +208,13 @@ func (s *SlurmApplicationHandler) generateSlurmSvc(app *slurmoperatorv1beta1.Slu
 			},
 		},
 	}
-	if err := controllerutil.SetControllerReference(app, svc, s.scheme); err != nil {
+	if err = controllerutil.SetControllerReference(app, svc, s.scheme); err != nil {
 		return nil, fmt.Errorf("setting svc controller reference error : %s", err)
 	}
 	return svc, nil
 }
 
-func (s *SlurmApplicationHandler) generateJupyterSvc(app *slurmoperatorv1beta1.SlurmApplication, svc *corev1.Service, name string) (*corev1.Service, error) {
-	if svc != nil {
-		return svc, nil
-	}
+func (s *SlurmApplicationHandler) GenerateJupyterSvc(app *slurmoperatorv1beta1.SlurmApplication, name string) (svc *corev1.Service, err error) {
 	svc = &corev1.Service{
 		TypeMeta: metav1.TypeMeta{Kind: "Service", APIVersion: "v1"},
 		ObjectMeta: metav1.ObjectMeta{
@@ -230,45 +228,18 @@ func (s *SlurmApplicationHandler) generateJupyterSvc(app *slurmoperatorv1beta1.S
 	svc.Spec = corev1.ServiceSpec{
 		Type: corev1.ServiceTypeNodePort,
 		Selector: map[string]string{
-			SlurmApplicationLabelKey: svc.Name,
+			SlurmApplicationLabelKey: name,
 		},
 		Ports: []corev1.ServicePort{
 			{
 				Name:       "8888p",
 				Port:       8888,
-				NodePort:   28888,
 				TargetPort: intstr.FromInt(8888),
 			},
 		},
 	}
-	if err := controllerutil.SetControllerReference(app, svc, s.scheme); err != nil {
+	if err = controllerutil.SetControllerReference(app, svc, s.scheme); err != nil {
 		return nil, fmt.Errorf("setting svc controller reference error : %s", err)
 	}
 	return svc, nil
-}
-
-func (s *SlurmApplicationHandler) getPodByNamespacedName(ctx context.Context, name, nameSpace string) (*corev1.Pod, error) {
-	key := client.ObjectKey{
-		Name:      name,
-		Namespace: nameSpace,
-	}
-	pod := &corev1.Pod{}
-	err := s.client.Get(ctx, key, pod)
-	if err != nil {
-		pod = nil
-	}
-	return pod, client.IgnoreNotFound(err)
-}
-
-func (s *SlurmApplicationHandler) getSvcByNamespacedName(ctx context.Context, name, nameSpace string) (*corev1.Service, error) {
-	key := client.ObjectKey{
-		Name:      name,
-		Namespace: nameSpace,
-	}
-	svc := &corev1.Service{}
-	err := s.client.Get(ctx, key, svc)
-	if err != nil {
-		svc = nil
-	}
-	return svc, client.IgnoreNotFound(err)
 }

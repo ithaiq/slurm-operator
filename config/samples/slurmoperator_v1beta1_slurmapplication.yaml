@@ -27,7 +27,7 @@ spec:
 apiVersion: slurmoperator.apulis.cn/v1beta1
 kind: SlurmApplication
 metadata:
-  name: slurmapplication-sample
+  name: slurmapplication-xu1111
 spec:
   volumes:
     - name: shared-pvc
@@ -35,15 +35,8 @@ spec:
         claimName: slurm-pvc-test
   jupyter:
     image: rancavil/slurm-jupyter:19.05.5-1
-    resources:
-      limits:
-        cpu: "1"
-        memory: "1Gi"
-      requests:
-        cpu: "500m"
-        memory: "500Mi"
     labels:
-      test: "3"
+      test: "5"
     nodeSelector:
       kubernetes.io/role: "master"
     volumeMounts:
@@ -51,13 +44,6 @@ spec:
         mountPath: /home/admin
   master:
     image: rancavil/slurm-master:19.05.5-1
-    resources:
-      limits:
-        cpu: "2"
-        memory: "2Gi"
-      requests:
-        cpu: "2"
-        memory: "2Gi"
     labels:
       test: "3"
     volumeMounts:
@@ -66,13 +52,6 @@ spec:
   node:
     image: rancavil/slurm-node:19.05.5-1
     instance: 4
-    resources:
-      limits:
-        cpu: "2"
-        memory: "2Gi"
-      requests:
-        cpu: "2"
-        memory: "2Gi"
     labels:
       test: "3"
     volumeMounts:
