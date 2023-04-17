@@ -1,0 +1,118 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose-demo.yml
+    kompose.version: 1.22.0 (955b78124)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: slurmjupyter
+  name: slurmjupyter
+spec:
+  containers:
+    - image: rancavil/slurm-jupyter:19.05.5-1
+      name: slurmjupyter
+      ports:
+        - containerPort: 8888
+      resources: {}
+      volumeMounts:
+        - mountPath: /home/admin
+          name: shared-vol
+  hostname: slurmjupyter
+  restartPolicy: Always
+  volumes:
+    - name: shared-vol
+      persistentVolumeClaim:
+        claimName: shared-vol
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose-demo.yml
+    kompose.version: 1.22.0 (955b78124)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: slurmmaster
+  name: slurmmaster
+spec:
+  containers:
+    - env:
+        - name: SLURM_CPUS_ON_NODE
+          value: "2"
+      image: rancavil/slurm-master:19.05.5-1
+      name: slurmmaster
+      ports:
+        - containerPort: 6817
+        - containerPort: 6818
+        - containerPort: 6819
+      resources: {}
+      volumeMounts:
+        - mountPath: /home/admin
+          name: shared-vol
+  hostname: slurmmaster
+  restartPolicy: Always
+  volumes:
+    - name: shared-vol
+      persistentVolumeClaim:
+        claimName: shared-vol
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose-demo.yml
+    kompose.version: 1.22.0 (955b78124)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: slurmnode1
+  name: slurmnode1
+spec:
+  containers:
+    - env:
+        - name: SLURM_CPUS_ON_NODE
+          value: "4"
+        - name: SLURM_NODENAME
+          value: slurmnode1
+      image: rancavil/slurm-node:19.05.5-1
+      name: slurmnode1
+      resources: {}
+      volumeMounts:
+        - mountPath: /home/admin
+          name: shared-vol
+  hostname: slurmnode1
+  restartPolicy: Always
+  volumes:
+    - name: shared-vol
+      persistentVolumeClaim:
+        claimName: shared-vol
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose-demo.yml
+    kompose.version: 1.22.0 (955b78124)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: slurmnode2
+  name: slurmnode2
+spec:
+  containers:
+    - env:
+        - name: SLURM_CPUS_ON_NODE
+          value: "4"
+        - name: SLURM_NODENAME
+          value: slurmnode2
+      image: rancavil/slurm-node:19.05.5-1
+      name: slurmnode2
+      resources: {}
+      volumeMounts:
+        - mountPath: /home/admin
+          name: shared-vol
+  hostname: slurmnode2
+  restartPolicy: Always
+  volumes:
+    - name: shared-vol
+      persistentVolumeClaim:
+        claimName: shared-vol

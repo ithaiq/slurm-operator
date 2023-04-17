@@ -1,0 +1,6 @@
+apiVersion: v2
+name: slurm-operator
+description: the slurm operator helm chart
+type: application
+version: v1beta1
+appVersion: "v1beta1"
