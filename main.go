@@ -1,5 +1,5 @@
 /*
-Copyright 2023 apulis.
+Copyright 2023 xxx.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ func main() {
 		MetricsBindAddress: metricsAddr,
 		Port:               9443,
 		LeaderElection:     enableLeaderElection,
-		LeaderElectionID:   "af44ae35.apulis.cn",
+		LeaderElectionID:   "af44ae35.xxx.cn",
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")

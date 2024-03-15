@@ -10,7 +10,7 @@
 ## 编译
 ```bash
 #指定版本打包编译docker镜像并推送
-make docker-build docker-push IMG=harbor.apulis.cn:8443/operator/slurm-operator:v1.0.0
+make docker-build docker-push IMG=harbor.xxx.cn:8443/operator/slurm-operator:v1.0.0
 ```
 
 ## 部署

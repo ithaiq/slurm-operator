@@ -1,5 +1,5 @@
 /*
-Copyright 2023 apulis.
+Copyright 2023 xxx.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import (
 	"testing"
 
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"

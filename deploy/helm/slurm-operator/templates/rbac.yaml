@@ -62,7 +62,7 @@ rules:
       - update
       - watch
   - apiGroups:
-      - slurmoperator.apulis.cn
+      - slurmoperator.xxx.cn
     resources:
       - slurmapplications
     verbs:
@@ -74,7 +74,7 @@ rules:
       - update
       - watch
   - apiGroups:
-      - slurmoperator.apulis.cn
+      - slurmoperator.xxx.cn
     resources:
       - slurmapplications/status
     verbs:

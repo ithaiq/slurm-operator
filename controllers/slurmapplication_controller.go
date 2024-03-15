@@ -1,5 +1,5 @@
 /*
-Copyright 2023 apulis.
+Copyright 2023 xxx.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -37,8 +37,8 @@ type SlurmApplicationReconciler struct {
 	Recorder record.EventRecorder
 }
 
-// +kubebuilder:rbac:groups=slurmoperator.apulis.cn,resources=slurmapplications,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=slurmoperator.apulis.cn,resources=slurmapplications/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=slurmoperator.xxx.cn,resources=slurmapplications,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=slurmoperator.xxx.cn,resources=slurmapplications/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;create;update;patch;delete
 

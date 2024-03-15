@@ -24,7 +24,7 @@ spec:
       storage: 100Mi
   volumeName: slurm-pv-test
 ---
-apiVersion: slurmoperator.apulis.cn/v1beta1
+apiVersion: slurmoperator.xxx.cn/v1beta1
 kind: SlurmApplication
 metadata:
   name: slurmapplication-xu1111

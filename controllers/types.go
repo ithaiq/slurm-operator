@@ -8,7 +8,7 @@ type (
 )
 
 const (
-	SlurmApplicationLabelKey                         = "slurmoperator.apulis.cn/cluster"
+	SlurmApplicationLabelKey                         = "slurmoperator.xxx.cn/cluster"
 	SlurmJupyter             SlurmResourceDefineName = "jupyter"
 	SlurmMaster              SlurmResourceDefineName = "master"
 	SlurmNode                SlurmResourceDefineName = "node"

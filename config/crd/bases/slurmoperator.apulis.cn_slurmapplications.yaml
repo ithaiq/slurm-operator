@@ -6,9 +6,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.4.1
   creationTimestamp: null
-  name: slurmapplications.slurmoperator.apulis.cn
+  name: slurmapplications.slurmoperator.xxx.cn
 spec:
-  group: slurmoperator.apulis.cn
+  group: slurmoperator.xxx.cn
   names:
     kind: SlurmApplication
     listKind: SlurmApplicationList

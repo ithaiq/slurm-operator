@@ -1,5 +1,5 @@
 /*
-Copyright 2023 apulis.
+Copyright 2023 xxx.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@ limitations under the License.
 
 // Package v1beta1 contains API Schema definitions for the slurmoperator v1beta1 API group
 // +kubebuilder:object:generate=true
-// +groupName=slurmoperator.apulis.cn
+// +groupName=slurmoperator.xxx.cn
 package v1beta1
 
 import (
@@ -26,7 +26,7 @@ import (
 
 var (
 	// GroupVersion is group version used to register these objects
-	GroupVersion = schema.GroupVersion{Group: "slurmoperator.apulis.cn", Version: "v1beta1"}
+	GroupVersion = schema.GroupVersion{Group: "slurmoperator.xxx.cn", Version: "v1beta1"}
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
 	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}

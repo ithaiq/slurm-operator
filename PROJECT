@@ -1,4 +1,4 @@
-domain: apulis.cn
+domain: xxx.cn
 repo: github.com/aistudio/slurm-operator
 resources:
 - group: slurmoperator

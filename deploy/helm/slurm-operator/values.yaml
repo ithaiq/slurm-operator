@@ -3,5 +3,5 @@
 # Declare variables to be passed into your templates.
 
 image:
-  repository: harbor.apulis.cn:8443/operator/slurm-operator
+  repository: harbor.xxx.cn:8443/operator/slurm-operator
   tag: v1.0.0

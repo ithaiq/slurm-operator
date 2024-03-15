@@ -5,7 +5,7 @@ metadata:
   name: slurmapplication-viewer-role
 rules:
 - apiGroups:
-  - slurmoperator.apulis.cn
+  - slurmoperator.xxx.cn
   resources:
   - slurmapplications
   verbs:
@@ -13,7 +13,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - slurmoperator.apulis.cn
+  - slurmoperator.xxx.cn
   resources:
   - slurmapplications/status
   verbs:
